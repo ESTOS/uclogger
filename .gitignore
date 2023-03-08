@@ -1,0 +1,14 @@
+node_modules/
+coverage/
+logs/*
+.vs/
+.eslintcache
+*.bak
+
+# stryker temp files
+.stryker-tmp
+/reports
+
+/.husky/.gitignore
+synclogger
+synclogger/*

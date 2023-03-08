@@ -1,0 +1,56 @@
+{
+  "name": "uclogger",
+  "version": "0.0.17",
+  "description": "Logger library for typescript/javascript projects",
+  "scripts": {
+    "check": "npx madge --circular --extensions ts --exclude \"\\.d\\.ts$|globals|dist\" ./",
+    "unused": "npx ts-unused-exports tsconfig.json --excludePathsFromReport=index.ts",
+    "clean": "npx rimraf dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx tsc -p .",
+    "lint": "eslint --cache --fix -c .eslintrc.precommit.js src/**/*.{js,ts,tsx}",
+    "lintclear": "del /s .eslintcache",
+    "relint": "run-s clean lintclear lint",
+    "lintnocache": "eslint --fix -c .eslintrc.precommit.js src/**/*.{js,ts,tsx}",
+    "precommit": "run-p lint check unused build",
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "lib/**/*.{js,ts,tsx}": [
+      "eslint --cache --fix -c .eslintrc.precommit.js"
+    ]
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "author": "estos GmbH",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^28.1.4",
+    "@types/node": "^18.0.1",
+    "@types/winston": "^2.4.4",
+    "@typescript-eslint/eslint-plugin": "^5.30.4",
+    "eslint": "^8.19.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-github": "^4.3.6",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsdoc": "^39.3.3",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-tsdoc": "^0.2.16",
+    "husky": "^8.0.1",
+    "jest": "^28.1.2",
+    "lint-staged": "^13.0.3",
+    "npm-run-all": "^4.1.5",
+    "ts-jest": "^28.0.5",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "fast-safe-stringify": "^2.1.1",
+    "logform": "^2.4.1",
+    "winston": "^3.8.1",
+    "winston-transport": "^4.5.0"
+  }
+}
