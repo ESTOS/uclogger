@@ -2,8 +2,6 @@ import ELogger from "../../src/elogger";
 import fs from "fs";
 import path from "path";
 import { TestInfrastructureConfig } from "../test.config";
-import { IFinalLogData } from "../../src/types";
-import { markAsUntransferable } from "worker_threads";
 
 const FILE_LOGGER_PATH = path.join(__dirname, "..", "loggerdump");
 
@@ -16,17 +14,15 @@ const deleteFilesInDir = ((directory: string): void => {
 
 describe("Test file logger", () => {
     beforeEach(() => {
-        deleteFilesInDir(FILE_LOGGER_PATH);
+        if(!fs.existsSync(FILE_LOGGER_PATH))
+            fs.mkdirSync(FILE_LOGGER_PATH);
+        else
+            deleteFilesInDir(FILE_LOGGER_PATH);
     })
 
     afterEach(() => {
         deleteFilesInDir(FILE_LOGGER_PATH);
     })
-
-    it("stress test general file logger", async () => {
-        // Write 1k logs and then crash end
-
-    });
 
     it("general file logger", async () => {
         const logFilename = "generalFile.log";

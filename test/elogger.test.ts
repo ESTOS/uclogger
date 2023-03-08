@@ -289,7 +289,6 @@ describe("lokiWinstonTransport", () => {
     it("lokiLabelsKey", async () => {
         const cb = jest.fn()
         logger.debug("some cache test debug", "lokiWinstonTransport_with_cache", logData, { meta: "data", cb, lokiLabelsKey: lokiLabelKey });
-        console.log(cb);
     });
 });
 // });
