@@ -2,7 +2,7 @@ import { Format } from "logform";
 /**
  * Error values, highest to lowest
  */
-export declare type LogLevels = "error" | "warn" | "info" | "debug";
+export type LogLevels = "error" | "warn" | "info" | "debug";
 export interface ILogFilterConfig {
     includeClassNames?: string[];
     excludeClassNames?: string[];
