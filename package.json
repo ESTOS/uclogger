@@ -1,7 +1,11 @@
 {
   "name": "uclogger",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "Logger library for typescript/javascript projects",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "check": "npx madge --circular --extensions ts --exclude \"\\.d\\.ts$|globals|dist\" ./",
     "unused": "npx ts-unused-exports tsconfig.json --excludePathsFromReport=index.ts",
