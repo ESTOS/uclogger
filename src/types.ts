@@ -67,6 +67,8 @@ interface IConsoleLog {
 	filterData?: Format;
 	/** If this logfile should only contain certain messages use the filter configuration */
 	filter?: ILogFilterConfigs;
+	/** True will make sure json is not prettyprinted is default false */
+	multiline?: boolean;
 }
 
 // Settings about the infrastructure
