@@ -573,6 +573,7 @@ class ELogger {
                 // If you want to see the log object in the vscode console window, this property must be set true, otherwise you see the formatted message
                 logObjectInsteadOfMessage: logSettings.consoleLog.logObjectInsteadOfMessage,
                 level: logSettings.consoleLog.logLevel ? logSettings.consoleLog.logLevel : logSettings.logLevel,
+                multiline: logSettings.consoleLog.multiline ? logSettings.consoleLog.multiline : true,
                 format,
                 test: this.test
             };
