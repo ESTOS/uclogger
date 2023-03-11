@@ -173,8 +173,10 @@ class SimpleConsoleTransport extends winston_1.default.transports.Console {
         super(options);
         this.test = false;
         this.logObjectInsteadOfMessage = false;
+        this.multiline = false;
         /* istanbul ignore next */
         this.logObjectInsteadOfMessage = options.logObjectInsteadOfMessage ? true : false;
+        this.multiline = options.multiline ? true : false;
         this.test = options.test ? true : false;
         if ("test" in options && options["test"])
             this.console = undefined;
@@ -190,8 +192,10 @@ class SimpleConsoleTransport extends winston_1.default.transports.Console {
     log(info, callback) {
         let logData;
         try {
-            if (this.logObjectInsteadOfMessage)
+            if (this.logObjectInsteadOfMessage && this.multiline)
                 logData = JSON.stringify(info, null, 2);
+            else if (this.logObjectInsteadOfMessage && !this.multiline)
+                logData = JSON.stringify(info);
             else
                 logData = JSON.stringify(info["message"], null, 2);
             // the logger does not log beyond nesting level 2 and adds elements with [Object] to the output instead
@@ -367,12 +371,10 @@ class ELogger {
                 }
             }
         }
-        if (error instanceof Error) {
+        if (error instanceof Error)
             error = Object.assign({}, { stack: error.stack, message: error.message, name: error.name });
-        }
-        else if (typeof error === 'object' && error !== null) {
+        else if (typeof error === "object" && error !== null)
             error = Object.assign({}, error);
-        }
         // The marker whether this error has already been logged
         let bHandled = false;
         if (this.logSubsequentErrorsAs) {
