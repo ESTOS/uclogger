@@ -166,6 +166,7 @@ class SimpleFileTransport extends winston.transports.File {
 class SimpleConsoleTransport extends winston.transports.Console {
 	public test = false;
 	public logObjectInsteadOfMessage = false;
+	public multiline = false;
 	public console: Console | undefined;
 
 	/**
@@ -173,10 +174,11 @@ class SimpleConsoleTransport extends winston.transports.Console {
 	 *
 	 * @param options - Transport config
 	 */
-	public constructor(options: winston.transports.ConsoleTransportOptions & { test?: boolean, logObjectInsteadOfMessage?: boolean }) {
+	public constructor(options: winston.transports.ConsoleTransportOptions & { test?: boolean, logObjectInsteadOfMessage?: boolean, multiline?: boolean }) {
 		super(options);
 		/* istanbul ignore next */
 		this.logObjectInsteadOfMessage = options.logObjectInsteadOfMessage ? true : false;
+		this.multiline = options.multiline ? true : false;
 		this.test = options.test ? true : false;
 		if ("test" in options && options["test"])
 			this.console = undefined;
@@ -193,8 +195,10 @@ class SimpleConsoleTransport extends winston.transports.Console {
 	public override log(info: LogEntry, callback: () => void) {
 		let logData: string;
 		try {
-			if (this.logObjectInsteadOfMessage)
+			if (this.logObjectInsteadOfMessage && this.multiline)
 				logData = JSON.stringify(info, null, 2);
+			else if (this.logObjectInsteadOfMessage && !this.multiline)
+				logData = JSON.stringify(info);
 			else
 				logData = JSON.stringify(info["message"], null, 2);
 
@@ -382,11 +386,10 @@ class ELogger {
 			}
 		}
 
-		if (error instanceof Error) {
+		if (error instanceof Error)
 			error = Object.assign({}, { stack: error.stack, message: error.message, name: error.name });
-		} else if (typeof error === 'object' && error !== null) {
+		else if (typeof error === "object" && error !== null)
 			error = Object.assign({}, error);
-		}
 
 		// The marker whether this error has already been logged
 		let bHandled = false;
