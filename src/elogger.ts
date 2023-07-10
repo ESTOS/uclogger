@@ -337,7 +337,7 @@ class ELogger {
 				/* istanbul ignore next */
 				log += ` meta:'${meta ? "provided" : "not provided"}'`;
 				/* istanbul ignore next */
-				log += ` exception:'${error ? "provided" : "not provided"}'\n`;
+				log += ` exception:'${error ? "provided" : "not provided"}'`;
 				log += ` error:'${error}'`;
 				this.console?.error(log);
 			} catch (error) {
