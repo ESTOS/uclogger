@@ -1,6 +1,6 @@
 {
   "name": "uclogger",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "Logger library for typescript/javascript projects",
   "engines": {
     "node": ">=18.0.0",
