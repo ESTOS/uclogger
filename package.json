@@ -1,6 +1,6 @@
 {
   "name": "@estos/uclogger",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "Logger library for typescript/javascript projects",
   "engines": {
     "node": ">=18.0.0",
