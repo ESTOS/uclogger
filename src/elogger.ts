@@ -1,12 +1,13 @@
 // Initialize our loggers
+import { TransformableInfo } from "logform";
 import path from "path";
 import winston, { LeveledLogMethod, LogEntry, Logger } from "winston";
-import LokiWinstonTransport from "./lokiWinstonTransport";
-import { ILoggerHandledError, IELoggerSettings, IFileLog, ILokiConfig, ILogFilterConfigs, ILogFilterConfig, IFinalLogData, ILokiAlternateLabelsMeta, LogLevels, ILogContext } from "./types";
-import TransportStream from "winston-transport";
 import { FileTransportOptions } from "winston/lib/winston/transports";
-import { TransformableInfo } from "logform";
+import TransportStream from "winston-transport";
+
+import LokiWinstonTransport from "./lokiWinstonTransport";
 import SyncFileWriterWinstonTransport from "./syncFileWriterWinstonTransport";
+import { ILoggerHandledError, IELoggerSettings, IFileLog, ILokiConfig, ILogFilterConfigs, ILogFilterConfig, IFinalLogData, ILokiAlternateLabelsMeta, LogLevels, ILogContext } from "./types";
 
 /**
  * Filters message that are written to the console according to the parameters as specified while initializing the console logger (IConsoleFilterConfigs)
