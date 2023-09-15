@@ -58,6 +58,12 @@ const logCallBackException = {
     }
 };
 
+class TestClassForLogContext {
+    public log(): void {
+        eLogger.debug("testing this as context", "log", this);
+    }
+}
+
 const TEMP_DIR = process.env["TMP"] || process.env["TMPDIR"] || process.env["TEMP"] || "./";
 
 eLogger.init({
@@ -220,6 +226,14 @@ describe("details", () => {
     });
     it("logCallBackException", async () => {
         eLogger.debug("message", "callingMethod", logCallBackException);
+    });
+    it("logcontext = this of class", async () => {
+        jestCallback.mockClear();
+        const test = new TestClassForLogContext();
+        test.log();
+        const logResult = jestCallback.mock.results[0]?.value;
+        expect(logResult.className).toBe("TestClassForLogContext");
+
     });
     it("logCallBackException", async () => {
         eLogger.debug("message", "callingMethod", logCallBack, undefined, errortoJSONException);

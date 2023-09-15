@@ -1,8 +1,8 @@
-import { LogEntry } from "winston";
-import TransportStream from "winston-transport";
 import fs from "fs";
 import path from "path";
+import { LogEntry } from "winston";
 import { FileTransportOptions } from "winston/lib/winston/transports";
+import TransportStream from "winston-transport";
 
 /**
  * Loki module for winston transport

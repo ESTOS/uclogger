@@ -12,7 +12,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// Initialize our loggers
 const path_1 = __importDefault(require("path"));
 const winston_1 = __importDefault(require("winston"));
 const lokiWinstonTransport_1 = __importDefault(require("./lokiWinstonTransport"));
@@ -252,63 +251,65 @@ class ELogger {
      *
      * @param msg - log message to write
      * @param callingMethod - calling method of the log
-     * @param logDataOrCallback - additional data or the log or callback which returns additional data
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - context meta data
      * @param error - throws Error
      * @param level - log level
      * @param logMethod - log method
      */
-    writeLog(msg, callingMethod, logDataOrCallback, meta, error, level, logMethod) {
-        var _a, _b, _c, _d, _e;
+    writeLog(msg, callingMethod, context, meta, error, level, logMethod) {
+        var _a, _b, _c, _d, _e, _f;
         try {
-            let context = {
+            let finalLogData = {
                 time: new Date().toISOString(),
                 level: level || "info",
                 message: msg,
                 method: callingMethod,
                 className: "ELogger"
             };
-            if (logDataOrCallback) {
-                if ("getLogData" in logDataOrCallback && logDataOrCallback.getLogData) {
+            if (context) {
+                if ("getLogData" in context && typeof context.getLogData === "function") {
                     try {
-                        const logData = logDataOrCallback.getLogData();
-                        context.className = logData.className;
-                        context.classProps = logData.classProps;
+                        const logData = context.getLogData();
+                        finalLogData.className = logData.className;
+                        finalLogData.classProps = logData.classProps;
                     }
                     catch (error) {
                         (_a = this.console) === null || _a === void 0 ? void 0 : _a.error("getLogData() raised an exception", error);
                     }
                 }
                 else {
-                    if ("className" in logDataOrCallback)
-                        context.className = logDataOrCallback.className;
-                    if ("classProps" in logDataOrCallback)
-                        context.classProps = logDataOrCallback.classProps;
+                    if ("className" in context)
+                        finalLogData.className = context.className;
+                    else
+                        finalLogData.className = (_b = context.constructor) === null || _b === void 0 ? void 0 : _b.name;
+                    if ("classProps" in context)
+                        finalLogData.classProps = context.classProps;
                 }
             }
             if (!msg)
-                (_b = this.console) === null || _b === void 0 ? void 0 : _b.error(`You MUST specify a log message ${context.className}.${context.method}`);
+                (_c = this.console) === null || _c === void 0 ? void 0 : _c.error(`You MUST specify a log message ${finalLogData.className}.${finalLogData.method}`);
             if (error) {
                 try {
-                    context.cause = error;
+                    finalLogData.cause = error;
                 }
                 catch (error) {
                     /* istanbul ignore next */
-                    (_c = this.logger) === null || _c === void 0 ? void 0 : _c.error("Could not log exception from error");
+                    (_d = this.logger) === null || _d === void 0 ? void 0 : _d.error("Could not log exception from error");
                 }
             }
             if (meta) {
                 if ("lokiLabelsKey" in meta) {
-                    context.lokiLabelsKey = meta.lokiLabelsKey;
+                    finalLogData.lokiLabelsKey = meta.lokiLabelsKey;
                     delete meta["lokiLabelsKey"];
                 }
-                context.meta = meta;
+                finalLogData.meta = meta;
             }
             /* istanbul ignore else */
             if (this.callback)
-                context = this.callback(context);
+                finalLogData = this.callback(finalLogData);
             if (logMethod)
-                logMethod(context);
+                logMethod(finalLogData);
         }
         catch (error) {
             /* istanbul ignore next */
@@ -318,17 +319,17 @@ class ELogger {
                 log += ` log:'${msg}'`;
                 log += ` callingMethod:'${callingMethod}'`;
                 /* istanbul ignore next */
-                log += ` logDataOrCallback:'${logDataOrCallback ? "provided" : "not provided"}'`;
+                log += ` context:'${context ? "provided" : "not provided"}'`;
                 /* istanbul ignore next */
                 log += ` meta:'${meta ? "provided" : "not provided"}'`;
                 /* istanbul ignore next */
                 log += ` exception:'${error ? "provided" : "not provided"}'`;
                 log += ` error:'${error}'`;
-                (_d = this.console) === null || _d === void 0 ? void 0 : _d.error(log);
+                (_e = this.console) === null || _e === void 0 ? void 0 : _e.error(log);
             }
             catch (error) {
                 /* istanbul ignore next */
-                (_e = this.console) === null || _e === void 0 ? void 0 : _e.error("FATAL exception inside elogger:", error);
+                (_f = this.console) === null || _f === void 0 ? void 0 : _f.error("FATAL exception inside elogger:", error);
             }
         }
     }
@@ -337,13 +338,13 @@ class ELogger {
      *
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    debug(msg, callingMethod, logDataOrCallback, meta, error) {
+    debug(msg, callingMethod, context, meta, error) {
         var _a;
-        this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "debug", this.logger ? this.logger.debug : (_a = this.console) === null || _a === void 0 ? void 0 : _a.debug);
+        this.writeLog(msg, callingMethod, context, meta, error, "debug", this.logger ? this.logger.debug : (_a = this.console) === null || _a === void 0 ? void 0 : _a.debug);
     }
     /**
      * Logs an error into the logger. If the error is undefined creates an exception internally and pops off the call into the logger from the stack trace
@@ -352,11 +353,11 @@ class ELogger {
      *
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    error(msg, callingMethod, logDataOrCallback, meta, error) {
+    error(msg, callingMethod, context, meta, error) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         if (error == null) {
             error = new Error(msg);
@@ -389,7 +390,7 @@ class ELogger {
         }
         if (!bHandled) {
             // The error has not yet been logged -> log it now with severity error
-            this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "error", this.logger ? this.logger.error : (_d = this.console) === null || _d === void 0 ? void 0 : _d.error);
+            this.writeLog(msg, callingMethod, context, meta, error, "error", this.logger ? this.logger.error : (_d = this.console) === null || _d === void 0 ? void 0 : _d.error);
             if (this.logSubsequentErrorsAs) {
                 // Mark this error as beeing handled. Subsequent calls are afterwards logged with a different (logSubsequentErrorsAs) log level
                 error.bHandled = true;
@@ -397,13 +398,13 @@ class ELogger {
         }
         else {
             if (((_e = this.logSettings) === null || _e === void 0 ? void 0 : _e.logSubsequentErrorsAs) === "info")
-                this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "info", this.logger ? this.logger.info : (_f = this.console) === null || _f === void 0 ? void 0 : _f.info);
+                this.writeLog(msg, callingMethod, context, meta, error, "info", this.logger ? this.logger.info : (_f = this.console) === null || _f === void 0 ? void 0 : _f.info);
             else if (this.logSubsequentErrorsAs === "warn")
-                this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "warn", this.logger ? this.logger.warn : (_g = this.console) === null || _g === void 0 ? void 0 : _g.warn);
+                this.writeLog(msg, callingMethod, context, meta, error, "warn", this.logger ? this.logger.warn : (_g = this.console) === null || _g === void 0 ? void 0 : _g.warn);
             else if (this.logSubsequentErrorsAs === "debug")
-                this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "debug", this.logger ? this.logger.debug : (_h = this.console) === null || _h === void 0 ? void 0 : _h.debug);
+                this.writeLog(msg, callingMethod, context, meta, error, "debug", this.logger ? this.logger.debug : (_h = this.console) === null || _h === void 0 ? void 0 : _h.debug);
             else
-                this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "error", this.logger ? this.logger.error : (_j = this.console) === null || _j === void 0 ? void 0 : _j.error);
+                this.writeLog(msg, callingMethod, context, meta, error, "error", this.logger ? this.logger.error : (_j = this.console) === null || _j === void 0 ? void 0 : _j.error);
         }
     }
     /**
@@ -411,26 +412,26 @@ class ELogger {
      *
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    info(msg, callingMethod, logDataOrCallback, meta, error) {
+    info(msg, callingMethod, context, meta, error) {
         var _a;
-        this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "info", this.logger ? this.logger.info : (_a = this.console) === null || _a === void 0 ? void 0 : _a.info);
+        this.writeLog(msg, callingMethod, context, meta, error, "info", this.logger ? this.logger.info : (_a = this.console) === null || _a === void 0 ? void 0 : _a.info);
     }
     /**
      * Logs a warning entry into the logger
      *
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    warn(msg, callingMethod, logDataOrCallback, meta, error) {
+    warn(msg, callingMethod, context, meta, error) {
         var _a;
-        this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "warn", this.logger ? this.logger.warn : (_a = this.console) === null || _a === void 0 ? void 0 : _a.warn);
+        this.writeLog(msg, callingMethod, context, meta, error, "warn", this.logger ? this.logger.warn : (_a = this.console) === null || _a === void 0 ? void 0 : _a.warn);
     }
     /**
      * Logs an error into the logger. If the error is undefined creates an exception internally and pops off the call into the logger from the stack trace
@@ -440,11 +441,11 @@ class ELogger {
      * @param level - Log level
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    log(level, msg, callingMethod, logDataOrCallback, meta, error) {
+    log(level, msg, callingMethod, context, meta, error) {
         var _a, _b, _c, _d;
         let method = this.logger ? this.logger.debug : (_a = this.console) === null || _a === void 0 ? void 0 : _a.debug;
         if (level === "warn")
@@ -453,7 +454,7 @@ class ELogger {
             method = this.logger ? this.logger.info : (_c = this.console) === null || _c === void 0 ? void 0 : _c.info;
         else if (level === "error")
             method = this.logger ? this.logger.error : (_d = this.console) === null || _d === void 0 ? void 0 : _d.error;
-        this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, level, method);
+        this.writeLog(msg, callingMethod, context, meta, error, level, method);
     }
     /**
      * Creates winstong file logger config

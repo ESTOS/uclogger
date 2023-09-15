@@ -1,8 +1,9 @@
 import http from "http";
 import https from "https";
-import { ILokiConfig, ILokiConfigLabels } from "./types";
 import { LogEntry } from "winston";
 import TransportStream from "winston-transport";
+
+import { ILokiConfig, ILokiConfigLabels } from "./types";
 
 const post = (lokiUrl: URL, contentType: string, headers = {}, data = "", auth?: string) => {
 	// Construct a buffer from the data string to have deterministic data size

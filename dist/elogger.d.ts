@@ -1,7 +1,7 @@
 import { LeveledLogMethod, Logger } from "winston";
-import { ILoggerHandledError, IELoggerSettings, IFileLog, IFinalLogData, ILogData, LogLevels, ILogCallback } from "./types";
-import TransportStream from "winston-transport";
 import { FileTransportOptions } from "winston/lib/winston/transports";
+import TransportStream from "winston-transport";
+import { ILoggerHandledError, IELoggerSettings, IFileLog, IFinalLogData, LogLevels, ILogContext } from "./types";
 /**
  * Class handling different logic between usual logger
  */
@@ -29,23 +29,23 @@ declare class ELogger {
      *
      * @param msg - log message to write
      * @param callingMethod - calling method of the log
-     * @param logDataOrCallback - additional data or the log or callback which returns additional data
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - context meta data
      * @param error - throws Error
      * @param level - log level
      * @param logMethod - log method
      */
-    writeLog(msg: string, callingMethod: string, logDataOrCallback?: ILogCallback | ILogData, meta?: Record<string, unknown>, error?: unknown, level?: LogLevels, logMethod?: LeveledLogMethod | ((message?: unknown, ...optionalParams: any[]) => void)): void;
+    writeLog(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown, level?: LogLevels, logMethod?: LeveledLogMethod | ((message?: unknown, ...optionalParams: any[]) => void)): void;
     /**
      * Logs a debug entry into the logger
      *
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    debug(msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void;
+    debug(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void;
     /**
      * Logs an error into the logger. If the error is undefined creates an exception internally and pops off the call into the logger from the stack trace
      * The logger adds a bHandled to the error object which the caller handed over. Subsequent error calls with the same error object are afterwards logged
@@ -53,31 +53,31 @@ declare class ELogger {
      *
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    error(msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown | Error | ILoggerHandledError): void;
+    error(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown | Error | ILoggerHandledError): void;
     /**
      * Logs an info entry into the logger
      *
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    info(msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void;
+    info(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void;
     /**
      * Logs a warning entry into the logger
      *
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    warn(msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void;
+    warn(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void;
     /**
      * Logs an error into the logger. If the error is undefined creates an exception internally and pops off the call into the logger from the stack trace
      * The logger adds a bHandled to the error object which the caller handed over. Subsequent error calls with the same error object are afterwards logged
@@ -86,11 +86,11 @@ declare class ELogger {
      * @param level - Log level
      * @param msg - The message to log
      * @param callingMethod - The method that was calling the logger
-     * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+     * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
      * @param meta - Meta data the caller wants to add to the log request
      * @param error - Any kind of error message.
      */
-    log(level: LogLevels, msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void;
+    log(level: LogLevels, msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void;
     /**
      * Creates winstong file logger config
      *
