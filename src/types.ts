@@ -179,10 +179,25 @@ export interface ILoggerHandledError extends Error {
 	bHandled?: true;
 }
 
+/**
+ * Type definition so that we can provide the classname of the object calling the logger by just handing over
+ */
+interface IConstructedObject {
+	constructor: {
+		name: string;
+	};
+}
+
+// Provides additional context for a log call
+// - This may be a callback that then provides data,
+// - Dedicated data provides as ILogData
+// - Or if we just want to add the classname of the class calling the logger
+export type ILogContext = ILogCallback | ILogData | IConstructedObject;
+
 // Config for the console logging
 // Usage is pretty simple and uses regular expressions for matching
 
-// If you do not specifify anything, everything is logged -> defaults to true for all of them
+// If you do not specify anything, everything is logged -> defaults to true for all of them
 // If you:
 // - do not want certain levels to be logged, specify false
 // - only want certain levels to be logged, specify the regular expression matching classnames and or methodnames
@@ -199,42 +214,42 @@ export interface ILogger {
 	 *
 	 * @param msg - The message to log
 	 * @param calling_method - The method that was calling the logger
-	 * @param logData_or_Callback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	error(msg: string, calling_method: string, logData_or_Callback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void;
+	error(msg: string, calling_method: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void;
 
 	/**
 	 * Logs a warning entry into the logger
 	 *
 	 * @param msg - The message to log
 	 * @param calling_method - The method that was calling the logger
-	 * @param logData_or_Callback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	warn(msg: string, calling_method: string, logData_or_Callback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void;
+	warn(msg: string, calling_method: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void;
 
 	/**
 	 * Logs an info entry into the logger
 	 *
 	 * @param msg - The message to log
 	 * @param calling_method - The method that was calling the logger
-	 * @param logData_or_Callback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	info(msg: string, calling_method: string, logData_or_Callback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void;
+	info(msg: string, calling_method: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void;
 
 	/**
 	 * Logs a debug entry into the logger
 	 *
 	 * @param msg - The message to log
 	 * @param calling_method - The method that was calling the logger
-	 * @param logData_or_Callback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	debug(msg: string, calling_method: string, logData_or_Callback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void;
+	debug(msg: string, calling_method: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void;
 }

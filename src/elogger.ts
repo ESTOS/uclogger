@@ -2,7 +2,7 @@
 import path from "path";
 import winston, { LeveledLogMethod, LogEntry, Logger } from "winston";
 import LokiWinstonTransport from "./lokiWinstonTransport";
-import { ILoggerHandledError, IELoggerSettings, IFileLog, ILokiConfig, ILogFilterConfigs, ILogFilterConfig, IFinalLogData, ILogData, ILokiAlternateLabelsMeta, LogLevels, ILogCallback } from "./types";
+import { ILoggerHandledError, IELoggerSettings, IFileLog, ILokiConfig, ILogFilterConfigs, ILogFilterConfig, IFinalLogData, ILokiAlternateLabelsMeta, LogLevels, ILogContext } from "./types";
 import TransportStream from "winston-transport";
 import { FileTransportOptions } from "winston/lib/winston/transports";
 import { TransformableInfo } from "logform";
@@ -266,15 +266,15 @@ class ELogger {
 	 *
 	 * @param msg - log message to write
 	 * @param callingMethod - calling method of the log
-	 * @param logDataOrCallback - additional data or the log or callback which returns additional data
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - context meta data
 	 * @param error - throws Error
 	 * @param level - log level
 	 * @param logMethod - log method
 	 */
-	public writeLog(msg: string, callingMethod: string, logDataOrCallback?: ILogCallback | ILogData, meta?: Record<string, unknown>, error?: unknown, level?: LogLevels, logMethod?: LeveledLogMethod | ((message?: unknown, ...optionalParams: any[]) => void)) {
+	public writeLog(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown, level?: LogLevels, logMethod?: LeveledLogMethod | ((message?: unknown, ...optionalParams: any[]) => void)) {
 		try {
-			let context: IFinalLogData = {
+			let finalLogData: IFinalLogData = {
 				time: new Date().toISOString(),
 				level: level || "info",
 				message: msg,
@@ -282,29 +282,31 @@ class ELogger {
 				className: "ELogger"
 			};
 
-			if (logDataOrCallback) {
-				if ("getLogData" in logDataOrCallback && logDataOrCallback.getLogData) {
+			if (context) {
+				if ("getLogData" in context && typeof context.getLogData === "function") {
 					try {
-						const logData = logDataOrCallback.getLogData();
-						context.className = logData.className;
-						context.classProps = logData.classProps;
+						const logData = context.getLogData();
+						finalLogData.className = logData.className;
+						finalLogData.classProps = logData.classProps;
 					} catch (error) {
 						this.console?.error("getLogData() raised an exception", error);
 					}
 				} else {
-					if ("className" in logDataOrCallback)
-						context.className = logDataOrCallback.className;
-					if ("classProps" in logDataOrCallback)
-						context.classProps = logDataOrCallback.classProps;
+					if ("className" in context)
+						finalLogData.className = context.className;
+					else
+						finalLogData.className = context.constructor?.name;
+					if ("classProps" in context)
+						finalLogData.classProps = context.classProps;
 				}
 			}
 
 			if (!msg)
-				this.console?.error(`You MUST specify a log message ${context.className}.${context.method}`);
+				this.console?.error(`You MUST specify a log message ${finalLogData.className}.${finalLogData.method}`);
 
 			if (error) {
 				try {
-					context.cause = error;
+					finalLogData.cause = error;
 				} catch (error) {
 					/* istanbul ignore next */
 					this.logger?.error("Could not log exception from error");
@@ -313,18 +315,18 @@ class ELogger {
 
 			if (meta) {
 				if ("lokiLabelsKey" in meta) {
-					context.lokiLabelsKey = (meta as ILokiAlternateLabelsMeta).lokiLabelsKey;
+					finalLogData.lokiLabelsKey = (meta as ILokiAlternateLabelsMeta).lokiLabelsKey;
 					delete meta["lokiLabelsKey"];
 				}
-				context.meta = meta;
+				finalLogData.meta = meta;
 			}
 
 			/* istanbul ignore else */
 			if (this.callback)
-				context = this.callback(context);
+				finalLogData = this.callback(finalLogData);
 
 			if (logMethod)
-				logMethod(context);
+				logMethod(finalLogData);
 		} catch (error) {
 			/* istanbul ignore next */
 			try {
@@ -333,7 +335,7 @@ class ELogger {
 				log += ` log:'${msg}'`;
 				log += ` callingMethod:'${callingMethod}'`;
 				/* istanbul ignore next */
-				log += ` logDataOrCallback:'${logDataOrCallback ? "provided" : "not provided"}'`;
+				log += ` context:'${context ? "provided" : "not provided"}'`;
 				/* istanbul ignore next */
 				log += ` meta:'${meta ? "provided" : "not provided"}'`;
 				/* istanbul ignore next */
@@ -352,12 +354,12 @@ class ELogger {
 	 *
 	 * @param msg - The message to log
 	 * @param callingMethod - The method that was calling the logger
-	 * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	public debug(msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void {
-		this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "debug", this.logger ? this.logger.debug : this.console?.debug);
+	public debug(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void {
+		this.writeLog(msg, callingMethod, context, meta, error, "debug", this.logger ? this.logger.debug : this.console?.debug);
 	}
 
 	/**
@@ -367,11 +369,11 @@ class ELogger {
 	 *
 	 * @param msg - The message to log
 	 * @param callingMethod - The method that was calling the logger
-	 * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	public error(msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown | Error | ILoggerHandledError): void {
+	public error(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown | Error | ILoggerHandledError): void {
 		if (error == null) {
 			error = new Error(msg);
 			if (error instanceof Error && "stack" in error && error.stack != null) {
@@ -406,20 +408,20 @@ class ELogger {
 
 		if (!bHandled) {
 			// The error has not yet been logged -> log it now with severity error
-			this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "error", this.logger ? this.logger.error : this.console?.error);
+			this.writeLog(msg, callingMethod, context, meta, error, "error", this.logger ? this.logger.error : this.console?.error);
 			if (this.logSubsequentErrorsAs) {
 				// Mark this error as beeing handled. Subsequent calls are afterwards logged with a different (logSubsequentErrorsAs) log level
 				(error as ILoggerHandledError).bHandled = true;
 			}
 		} else {
 			if (this.logSettings?.logSubsequentErrorsAs === "info")
-				this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "info", this.logger ? this.logger.info : this.console?.info);
+				this.writeLog(msg, callingMethod, context, meta, error, "info", this.logger ? this.logger.info : this.console?.info);
 			else if (this.logSubsequentErrorsAs === "warn")
-				this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "warn", this.logger ? this.logger.warn : this.console?.warn);
+				this.writeLog(msg, callingMethod, context, meta, error, "warn", this.logger ? this.logger.warn : this.console?.warn);
 			else if (this.logSubsequentErrorsAs === "debug")
-				this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "debug", this.logger ? this.logger.debug : this.console?.debug);
+				this.writeLog(msg, callingMethod, context, meta, error, "debug", this.logger ? this.logger.debug : this.console?.debug);
 			else
-				this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "error", this.logger ? this.logger.error : this.console?.error);
+				this.writeLog(msg, callingMethod, context, meta, error, "error", this.logger ? this.logger.error : this.console?.error);
 		}
 	}
 
@@ -428,12 +430,12 @@ class ELogger {
 	 *
 	 * @param msg - The message to log
 	 * @param callingMethod - The method that was calling the logger
-	 * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	public info(msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void {
-		this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "info", this.logger ? this.logger.info : this.console?.info);
+	public info(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void {
+		this.writeLog(msg, callingMethod, context, meta, error, "info", this.logger ? this.logger.info : this.console?.info);
 	}
 
 	/**
@@ -441,12 +443,12 @@ class ELogger {
 	 *
 	 * @param msg - The message to log
 	 * @param callingMethod - The method that was calling the logger
-	 * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	public warn(msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown): void {
-		this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, "warn", this.logger ? this.logger.warn : this.console?.warn);
+	public warn(msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown): void {
+		this.writeLog(msg, callingMethod, context, meta, error, "warn", this.logger ? this.logger.warn : this.console?.warn);
 	}
 
 	/**
@@ -457,11 +459,11 @@ class ELogger {
 	 * @param level - Log level
 	 * @param msg - The message to log
 	 * @param callingMethod - The method that was calling the logger
-	 * @param logDataOrCallback - A callback to aquire log data from the caller or the logdata itself (e.g. className)
+	 * @param context - provides contextual data as callback, dedicated data as ILogData or just the classname calling the logger
 	 * @param meta - Meta data the caller wants to add to the log request
 	 * @param error - Any kind of error message.
 	 */
-	public log(level: LogLevels, msg: string, callingMethod: string, logDataOrCallback?: ILogData | ILogCallback, meta?: Record<string, unknown>, error?: unknown) {
+	public log(level: LogLevels, msg: string, callingMethod: string, context?: ILogContext, meta?: Record<string, unknown>, error?: unknown) {
 		let method = this.logger ? this.logger.debug : this.console?.debug;
 		if (level === "warn")
 			method = this.logger ? this.logger.warn : this.console?.warn;
@@ -469,7 +471,7 @@ class ELogger {
 			method = this.logger ? this.logger.info : this.console?.info;
 		else if (level === "error")
 			method = this.logger ? this.logger.error : this.console?.error;
-		this.writeLog(msg, callingMethod, logDataOrCallback, meta, error, level, method);
+		this.writeLog(msg, callingMethod, context, meta, error, level, method);
 	}
 
 	/**
