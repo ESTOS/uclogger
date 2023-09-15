@@ -3,9 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const winston_transport_1 = __importDefault(require("winston-transport"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const winston_transport_1 = __importDefault(require("winston-transport"));
 /**
  * Loki module for winston transport
  */

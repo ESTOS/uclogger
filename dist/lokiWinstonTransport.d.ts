@@ -1,6 +1,6 @@
-import { ILokiConfig, ILokiConfigLabels } from "./types";
 import { LogEntry } from "winston";
 import TransportStream from "winston-transport";
+import { ILokiConfig, ILokiConfigLabels } from "./types";
 /**
  * Loki module for winston transport
  */
